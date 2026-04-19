@@ -1,0 +1,93 @@
+const express = require('express');
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+const User = require('../models/User');
+const { requireAuth } = require('../middleware/authMiddleware');
+
+const router = express.Router();
+
+router.post('/request-access', requireAuth, async (req, res) => {
+    try {
+        const { categories } = req.body;
+        const user = await User.findById(req.user._id);
+        user.requestedCategories = categories;
+        await user.save();
+        res.json({ success: true });
+    } catch(err) {
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+router.post('/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    const user = await User.findOne({ email }).populate('approvedCategories');
+    
+    if (!user) return res.status(401).json({ error: 'Invalid credentials' });
+    
+    const isMatch = await bcrypt.compare(password, user.passwordHash);
+    if (!isMatch) return res.status(401).json({ error: 'Invalid credentials' });
+    
+    const token = jwt.sign(
+      { userId: user._id, role: user.role },
+      process.env.JWT_SECRET || 'fallback_secret',
+      { expiresIn: '1d' }
+    );
+    
+    res.json({ token, user });
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+router.post('/register', async (req, res) => {
+    try {
+        const { name, email, password, phoneNumber } = req.body;
+        const existing = await User.findOne({ email });
+        if (existing) return res.status(400).json({ error: 'Email already in use' });
+
+        const passwordHash = await bcrypt.hash(password, 10);
+        const user = await User.create({ name, email, passwordHash, phoneNumber, role: 'buyer', isApproved: false });
+
+        const token = jwt.sign(
+            { userId: user._id, role: user.role },
+            process.env.JWT_SECRET || 'fallback_secret',
+            { expiresIn: '1d' }
+        );
+
+        res.status(201).json({ token, user });
+    } catch (err) {
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+router.get('/me', async (req, res) => {
+    try {
+        const token = req.headers.authorization?.split(' ')[1];
+        if (!token) return res.status(401).json({ error: 'No token' });
+        
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
+        const user = await User.findById(decoded.userId).populate('approvedCategories');
+        if (!user) return res.status(404).json({ error: 'User not found' });
+        
+        res.json({ user });
+    } catch(err) {
+        res.status(401).json({ error: 'Invalid token' });
+    }
+});
+
+// To set up quick demo users (admin / buyer)
+router.post('/setup-demo', async (req, res) => {
+    try {
+        const hash = await bcrypt.hash('password123', 10);
+        await User.create([
+            { email: 'admin@demo.com', name: 'Admin Salesman', role: 'admin', passwordHash: hash, isApproved: true },
+            { email: 'buyer@demo.com', name: 'Buyer User', role: 'buyer', passwordHash: hash, isApproved: false }
+        ]);
+        res.json({ success: true, message: "Demo accounts created." });
+    } catch(err) {
+        res.status(500).json({ error: err.message });
+    }
+})
+
+module.exports = router;
