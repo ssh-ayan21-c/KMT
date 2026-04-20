@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import axios from 'axios';
-import useAuthStore from '../store/authStore';
+import useAuthStore, { api } from '../store/authStore';
 import { Eye, CheckCircle, Clock, Plus, Edit2, ShieldCheck, ImageIcon, PackageSearch, Users } from 'lucide-react';
 
 export default function AdminDashboard() {
@@ -25,11 +24,10 @@ export default function AdminDashboard() {
         const fetchDashboardData = async () => {
             try {
                 // Fetch all clients (buyers) for Client Manager
-                const token = { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }};
-                const usersRes = await axios.get('http://localhost:5000/api/admin/users/requests');
-                const ordersRes = await axios.get('http://localhost:5000/api/admin/orders');
-                const prodRes = await axios.get('http://localhost:5000/api/products');
-                const catRes = await axios.get('http://localhost:5000/api/categories');
+                const usersRes = await api.get('/admin/users/requests');
+                const ordersRes = await api.get('/admin/orders');
+                const prodRes = await api.get('/products');
+                const catRes = await api.get('/categories');
                 
                 // Note: backend 'users/requests' currently only returns unapproved. Let's assume it was updated or just fetch from generic if we added it,
                 // but actually we need all buyers to set discounts. We should use a general fetch if needed. Since we only modified the models, let's keep it simple.
@@ -51,7 +49,7 @@ export default function AdminDashboard() {
     const handleImpersonate = async (client) => {
          try {
              if (client._id === 'fake-approved-id') { return; }
-             const res = await axios.post(`http://localhost:5000/api/admin/impersonate/${client._id}`);
+             const res = await api.post(`/admin/impersonate/${client._id}`);
              setImpersonation(res.data.token, res.data.user);
          } catch (err) { alert('Failed to impersonate user.'); }
     };
@@ -65,11 +63,10 @@ export default function AdminDashboard() {
                  currentApproved.push(categoryId);
              }
 
-             const token = localStorage.getItem('token');
-             const res = await axios.put(`http://localhost:5000/api/admin/users/${client._id}/access`, { 
+             const res = await api.put(`/admin/users/${client._id}/access`, { 
                  isApproved: true, 
                  approvedCategories: currentApproved
-             }, { headers: { Authorization: `Bearer ${token}` } });
+             });
              setClients(clients.map(c => c._id === client._id ? res.data : c));
              if (selectedClient?._id === client._id) setSelectedClient(res.data);
          } catch(err) { alert('Failed to modify access: ' + (err.response?.data?.error || err.message)); }
@@ -79,11 +76,10 @@ export default function AdminDashboard() {
         e.preventDefault();
         if (!selectedClient) return;
         try {
-            const token = localStorage.getItem('token');
-            const res = await axios.post(`http://localhost:5000/api/admin/users/${selectedClient._id}/pricing`, {
+            const res = await api.post(`/admin/users/${selectedClient._id}/pricing`, {
                 category: discountForm.categoryId,
                 discountPercentage: discountForm.percentage
-            }, { headers: { Authorization: `Bearer ${token}` } });
+            });
             setClients(clients.map(c => c._id === selectedClient._id ? res.data : c));
             if (selectedClient?._id === selectedClient._id) setSelectedClient(res.data);
             alert('Custom Discount Matrix Applied!');
@@ -103,7 +99,7 @@ export default function AdminDashboard() {
          const catName = prompt("Enter the name of the New Macro Category:");
          if (!catName) return;
          try {
-             const res = await axios.post('http://localhost:5000/api/admin/categories', { name: catName });
+             const res = await api.post('/admin/categories', { name: catName });
              setCategories([...categories, res.data]);
              setProductForm({ ...productForm, category: res.data._id });
          } catch(err) { alert('Failed to create category on the fly'); }
@@ -113,10 +109,10 @@ export default function AdminDashboard() {
          e.preventDefault();
          try {
              if (editingProduct) {
-                 const res = await axios.put(`http://localhost:5000/api/admin/products/${editingProduct}`, productForm);
+                 const res = await api.put(`/admin/products/${editingProduct}`, productForm);
                  setProducts(products.map(p => p._id === editingProduct ? res.data : p));
              } else {
-                 const res = await axios.post('http://localhost:5000/api/admin/products', productForm);
+                 const res = await api.post('/admin/products', productForm);
                  setProducts([...products, res.data]);
              }
              setEditingProduct(null);
@@ -128,7 +124,7 @@ export default function AdminDashboard() {
         if (!editingProduct) return;
         if (!window.confirm('Are you absolutely sure you want to PERMANENTLY remove this product from the inventory?')) return;
         try {
-            await axios.delete(`http://localhost:5000/api/admin/products/${editingProduct}`);
+            await api.delete(`/admin/products/${editingProduct}`);
             setProducts(products.filter(p => p._id !== editingProduct));
             setEditingProduct(null);
             setProductForm({ name: '', sku: '', basePrice: 0, stockQuantity: 0, moq: 1, details: '', imageUrl: '', category: '' });
@@ -150,19 +146,19 @@ export default function AdminDashboard() {
               if (!reason) return; 
          }
          try {
-             const res = await axios.put(`http://localhost:5000/api/admin/orders/${orderId}/status`, { status: newStatus, reason });
+             const res = await api.put(`/admin/orders/${orderId}/status`, { status: newStatus, reason });
              setOrders(orders.map(o => o._id === orderId ? res.data : o));
          } catch(err) { alert('Failed to update order status'); }
     };
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-            <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderBottom: '1px solid var(--border-color)', paddingBottom: '1.5rem' }}>
+            <header className="dashboard-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderBottom: '1px solid var(--border-color)', paddingBottom: '1.5rem' }}>
                 <div>
                    <h1 style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>Sales Control Panel</h1>
                    <p style={{ color: 'var(--text-secondary)', margin: 0 }}>Approve buyers, manage MOQs, process shipments.</p>
                 </div>
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <div className="dashboard-tabs" style={{ display: 'flex', gap: '0.5rem' }}>
                      <button className={`btn ${activeTab === 'pipeline' ? 'btn-primary' : 'btn-glass'}`} onClick={() => setActiveTab('pipeline')}><Clock size={16}/> Pipeline</button>
                      <button className={`btn ${activeTab === 'clients' ? 'btn-primary' : 'btn-glass'}`} onClick={() => setActiveTab('clients')}><Users size={16}/> Client Manager</button>
                      <button className={`btn ${activeTab === 'inventory' ? 'btn-primary' : 'btn-glass'}`} onClick={() => setActiveTab('inventory')}><PackageSearch size={16}/> Inventory</button>
@@ -170,8 +166,8 @@ export default function AdminDashboard() {
             </header>
 
             {loading ? <div>Loading dashboard...</div> : activeTab === 'pipeline' ? (
-                 <div style={{ display: 'flex', gap: '2rem', overflowX: 'auto', minHeight: '600px' }}>
-                      <div className="glass-panel" style={{ flex: 1, minWidth: '400px', padding: '1.5rem', background: 'rgba(30, 41, 59, 0.4)' }}>
+                 <div className="pipeline-grid" style={{ display: 'flex', gap: '2rem', overflowX: 'auto', minHeight: '600px' }}>
+                      <div className="glass-panel pipeline-column" style={{ flex: 1, minWidth: '400px', padding: '1.5rem', background: 'rgba(30, 41, 59, 0.4)' }}>
                            <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--accent-purple)' }}><Clock size={18}/> Pending Quotes</h4>
                            {orders.filter(o => o.status === 'pending').map(order => (
                                <div key={order._id} style={{ background: 'var(--bg-secondary)', padding: '1.5rem', borderRadius: '8px', border: '1px solid var(--border-color)', marginTop: '1rem' }}>
@@ -198,7 +194,7 @@ export default function AdminDashboard() {
                            ))}
                       </div>
                       
-                      <div className="glass-panel" style={{ flex: 1, minWidth: '400px', padding: '1.5rem', background: 'rgba(30, 41, 59, 0.4)' }}>
+                      <div className="glass-panel pipeline-column" style={{ flex: 1, minWidth: '400px', padding: '1.5rem', background: 'rgba(30, 41, 59, 0.4)' }}>
                            <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--accent-green)' }}><CheckCircle size={18}/> Reviewed & Processed</h4>
                            {orders.filter(o => o.status !== 'pending').map(order => (
                                <div key={order._id} style={{ opacity: order.status === 'rejected' ? 0.6 : 1, background: 'var(--bg-secondary)', padding: '1rem', borderRadius: '8px', border: '1px solid var(--border-color)', marginTop: '1rem' }}>

@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import useAuthStore from '../store/authStore';
+import useAuthStore, { api } from '../store/authStore';
 import { LayoutDashboard, Package, ShieldCheck, LogOut, XCircle, PackageSearch, MessageSquare } from 'lucide-react';
 
 export default function Sidebar({ isOpen, onClose }) {
@@ -55,10 +55,7 @@ export default function Sidebar({ isOpen, onClose }) {
                         <div style={{ padding: '0.75rem 1rem', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer', marginTop: '0.5rem' }} onClick={() => {
                              const suggestion = prompt("Submit a feature or product suggestion directly to Kamran Mekrani Trade administration:");
                              if (suggestion) {
-                                 fetch('http://localhost:5000/api/notifications/suggest', {
-                                     method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
-                                     body: JSON.stringify({ suggestion })
-                                 }).then(() => alert("Suggestion submitted successfully!"));
+                                 api.post('/notifications/suggest', { suggestion }).then(() => alert("Suggestion submitted successfully!"));
                              }
                              onClose();
                         }}>

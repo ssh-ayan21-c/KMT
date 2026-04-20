@@ -1,7 +1,9 @@
 const express = require('express');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const { OAuth2Client } = require('google-auth-library');
 const User = require('../models/User');
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 const { requireAuth } = require('../middleware/authMiddleware');
 
 const router = express.Router();
@@ -40,6 +42,51 @@ router.post('/login', async (req, res) => {
   }
 });
 
+router.post('/google-login', async (req, res) => {
+    try {
+        const { googleToken } = req.body;
+        if (!googleToken) return res.status(400).json({ error: 'Missing token' });
+
+        const ticket = await client.verifyIdToken({
+            idToken: googleToken,
+            audience: process.env.GOOGLE_CLIENT_ID,
+        });
+        const payload = ticket.getPayload();
+        const { sub: googleId, email, name, picture } = payload;
+
+        let user = await User.findOne({ email }).populate('approvedCategories');
+
+        if (user) {
+            // Link account if not already linked
+            if (!user.googleId) {
+                user.googleId = googleId;
+                await user.save();
+            }
+        } else {
+            // Create new user
+            user = await User.create({
+                email,
+                name: name || email.split('@')[0],
+                googleId,
+                role: 'buyer',
+                isApproved: false,
+                phoneNumber: 'PENDING' // Placeholder until user provides it
+            });
+        }
+
+        const token = jwt.sign(
+            { userId: user._id, role: user.role },
+            process.env.JWT_SECRET || 'fallback_secret',
+            { expiresIn: '1d' }
+        );
+
+        res.json({ token, user });
+    } catch (err) {
+        console.error('Google Auth Error:', err);
+        res.status(401).json({ error: 'Google authentication failed' });
+    }
+});
+
 router.post('/register', async (req, res) => {
     try {
         const { name, email, password, phoneNumber } = req.body;
@@ -72,7 +119,21 @@ router.get('/me', async (req, res) => {
         
         res.json({ user });
     } catch(err) {
-        res.status(401).json({ error: 'Invalid token' });
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+router.put('/profile', requireAuth, async (req, res) => {
+    try {
+        const { phoneNumber } = req.body;
+        const user = await User.findById(req.user._id);
+        if (!user) return res.status(404).json({ error: 'User not found' });
+        
+        user.phoneNumber = phoneNumber;
+        await user.save();
+        res.json({ success: true, user });
+    } catch(err) {
+        res.status(500).json({ error: 'Server error' });
     }
 });
 

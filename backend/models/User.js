@@ -2,11 +2,12 @@ const mongoose = require('mongoose');
 
 const userSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
-  passwordHash: { type: String, required: true },
+  passwordHash: { type: String, required: function() { return !this.googleId; } },
   role: { type: String, enum: ['admin', 'buyer'], default: 'buyer' },
   name: { type: String, required: true },
   company: { type: String },
-  phoneNumber: { type: String, required: true },
+  phoneNumber: { type: String, required: function() { return !this.googleId; } },
+  googleId: { type: String, unique: true, sparse: true },
   
   // Array of categories the buyer is approved to view and purchase from
   approvedCategories: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Category' }],

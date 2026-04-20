@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import useAuthStore from '../store/authStore';
-import { LogIn, UserPlus } from 'lucide-react';
+import { LogIn, UserPlus, Phone } from 'lucide-react';
+import { GoogleLogin } from '@react-oauth/google';
 
 export default function Login() {
   const [isLogin, setIsLogin] = useState(true);
@@ -9,8 +10,12 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [error, setError] = useState('');
+
+  // Post-Google login phone number logic
+  const [showPhoneModal, setShowPhoneModal] = useState(false);
+  const [pendingUser, setPendingUser] = useState(null);
   
-  const { login, register } = useAuthStore();
+  const { login, register, googleLogin } = useAuthStore();
 
   const handleAuth = async (e) => {
     e.preventDefault();
@@ -26,8 +31,49 @@ export default function Login() {
     if (!res.success) setError(res.error);
   };
 
+  const onGoogleSuccess = async (response) => {
+      const res = await googleLogin(response.credential);
+      if (res.success) {
+          if (res.user.phoneNumber === 'PENDING') {
+              setPendingUser(res.user);
+              setShowPhoneModal(true);
+          }
+      } else {
+          setError(res.error);
+      }
+  };
+
+  const submitPhoneNumber = async () => {
+       if (!phoneNumber) return;
+       try {
+           const { api } = await import('../store/authStore');
+           await api.put('/auth/profile', { phoneNumber });
+           window.location.reload(); 
+       } catch(err) { setError('Failed to save phone number'); }
+  };
+
   return (
     <div className="app-container" style={{ justifyContent: 'center', alignItems: 'center', background: 'radial-gradient(circle at center, #393939 0%, #1a1a1a 100%)', padding: '1rem', height: 'auto', minHeight: '100vh' }}>
+      
+      {showPhoneModal && (
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+              <div className="glass-panel" style={{ padding: '2rem', maxWidth: '400px', width: '100%', textAlign: 'center' }}>
+                  <div style={{ marginBottom: '1.5rem', color: 'var(--accent-primary)' }}><Phone size={48} /></div>
+                  <h3 style={{ marginBottom: '0.5rem' }}>One last step!</h3>
+                  <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>We need your phone number for order communications and delivery coordination.</p>
+                  <input 
+                    type="tel" 
+                    className="input-glass" 
+                    style={{ width: '100%', marginBottom: '1.5rem' }} 
+                    placeholder="+91 XXXXX XXXXX"
+                    value={phoneNumber}
+                    onChange={e => setPhoneNumber(e.target.value)}
+                  />
+                  <button className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }} onClick={submitPhoneNumber}>Get Started</button>
+              </div>
+          </div>
+      )}
+
       <div className="glass-panel" style={{ padding: '2.5rem', width: '100%', maxWidth: '450px', borderRadius: '32px', background: 'rgba(57, 57, 57, 0.4)' }}>
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
             <img src="/logo.png" alt="KMT Logo" style={{ height: '80px', filter: 'invert(1)', marginBottom: '1.5rem' }} />
@@ -65,6 +111,23 @@ export default function Login() {
             {isLogin ? <><LogIn size={20} /> Authorize Access</> : <><UserPlus size={20} /> Register Account</>}
           </button>
         </form>
+
+        <div style={{ margin: '1.5rem 0', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <div style={{ flex: 1, height: '1px', background: 'var(--border-color)' }} />
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>OR</span>
+            <div style={{ flex: 1, height: '1px', background: 'var(--border-color)' }} />
+        </div>
+
+        <div style={{ display: 'flex', justifyContent: 'center' }}>
+            <GoogleLogin 
+                onSuccess={onGoogleSuccess}
+                onError={() => setError('Google Login Failed')}
+                theme="filled_black"
+                shape="pill"
+                text="continue_with"
+                width={300}
+            />
+        </div>
 
         <div style={{ marginTop: '2rem', textAlign: 'center' }}>
            <button 

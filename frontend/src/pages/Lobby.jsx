@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import useAuthStore from '../store/authStore';
+import useAuthStore, { api } from '../store/authStore';
 import { PackageSearch, LogOut } from 'lucide-react';
-import axios from 'axios';
 import { Navigate } from 'react-router-dom';
 
 export default function Lobby() {
@@ -16,7 +15,7 @@ export default function Lobby() {
     useEffect(() => {
          const fetchCategories = async () => {
              try {
-                 const res = await axios.get('http://localhost:5000/api/categories');
+                 const res = await api.get('/categories');
                  const allCats = res.data;
                  // Don't show categories they are already approved for
                  const validCats = user?.approvedCategories?.length > 0 
@@ -44,7 +43,7 @@ export default function Lobby() {
         if (selected.length === 0) return alert('Please select at least one category to request access for.');
         
         try {
-            await axios.post('http://localhost:5000/api/auth/request-access', { categories: selected });
+            await api.post('/auth/request-access', { categories: selected });
             setRequested(true);
         } catch(err) {
             alert('Failed to submit request');

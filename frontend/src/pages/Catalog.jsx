@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import useAuthStore, { api } from '../store/authStore';
 import { ShoppingCart, Send, ArrowLeft } from 'lucide-react';
 import { useParams, useNavigate } from 'react-router-dom';
 
@@ -19,7 +19,7 @@ export default function Catalog() {
                 // If categoryId is present, we could append it to a query or just filter on client side.
                 // Since our backend /api/products relies on what the user is approved for, it returns everything.
                 // We'll filter on client for simplicity, or we could pass ?category=id
-                const res = await axios.get('http://localhost:5000/api/products');
+                const res = await api.get('/products');
                 let fetchedProducts = res.data;
                 if (categoryId) {
                      fetchedProducts = fetchedProducts.filter(p => p.category?._id === categoryId);
@@ -72,7 +72,7 @@ export default function Catalog() {
          });
          
          try {
-             await axios.post('http://localhost:5000/api/orders/request', { items, shippingAddress, billingAddress });
+             await api.post('/orders/request', { items, shippingAddress, billingAddress });
              alert('Order Request (RFQ) Submitted to Sales Rep!');
              setCart({});
              setShippingAddress('');
