@@ -47,12 +47,31 @@ router.post('/google-login', async (req, res) => {
         const { googleToken, phoneNumber } = req.body;
         if (!googleToken) return res.status(400).json({ error: 'Missing token' });
 
-        const ticket = await client.verifyIdToken({
-            idToken: googleToken,
-            audience: process.env.GOOGLE_CLIENT_ID,
-        });
-        const payload = ticket.getPayload();
-        const { sub: googleId, email, name } = payload;
+        let googleId, email, name;
+
+        // An idToken is a JWT (looks like xxxx.yyyy.zzzz and is very long)
+        // An access_token is a short random string.
+        if (googleToken.includes('.')) {
+            // ID Token Flow
+            const ticket = await client.verifyIdToken({
+                idToken: googleToken,
+                audience: process.env.GOOGLE_CLIENT_ID,
+            });
+            const payload = ticket.getPayload();
+            googleId = payload.sub;
+            email = payload.email;
+            name = payload.name;
+        } else {
+            // Access Token Flow (used by Custom Google Login Button hook)
+            const response = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+                headers: { Authorization: `Bearer ${googleToken}` }
+            });
+            if (!response.ok) throw new Error('Invalid access token');
+            const data = await response.json();
+            googleId = data.sub;
+            email = data.email;
+            name = data.name;
+        }
 
         let user = await User.findOne({ email }).populate('approvedCategories');
 
