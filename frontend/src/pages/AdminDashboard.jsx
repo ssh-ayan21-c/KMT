@@ -256,19 +256,19 @@ export default function AdminDashboard() {
 
                               <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '1.5rem' }}>
                                    <h4 style={{ fontSize: '0.9rem', color: 'var(--accent-purple)', marginBottom: '1rem' }}>Assign Custom Sales Matrix (Discount)</h4>
-                                   <form onSubmit={grantDiscount} style={{ display: 'flex', gap: '1rem', alignItems: 'flex-end' }}>
-                                       <div style={{ flex: 1 }}>
+                                   <form onSubmit={grantDiscount} className="form-row align-end">
+                                       <div className="form-group">
                                            <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.25rem', display: 'block' }}>Target Category</label>
-                                           <select className="input-glass" value={discountForm.categoryId} onChange={e => setDiscountForm({...discountForm, categoryId: e.target.value})} required>
+                                           <select className="input-glass" value={discountForm.categoryId} onChange={e => setDiscountForm({...discountForm, categoryId: e.target.value})} required style={{ width: '100%' }}>
                                                <option value="">Select Category</option>
                                                {selectedClient.approvedCategories?.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
                                            </select>
                                        </div>
-                                       <div style={{ width: '100px' }}>
+                                       <div className="form-group">
                                            <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.25rem', display: 'block' }}>Discount %</label>
-                                           <input type="number" className="input-glass" min="1" max="100" value={discountForm.percentage} onChange={e => setDiscountForm({...discountForm, percentage: parseInt(e.target.value,10)})} required />
+                                           <input type="number" className="input-glass" min="1" max="100" value={discountForm.percentage} onChange={e => setDiscountForm({...discountForm, percentage: parseInt(e.target.value,10)})} required style={{ width: '100%' }} />
                                        </div>
-                                       <button type="submit" className="btn btn-primary" style={{ padding: '0.7rem' }}>Push Matrix</button>
+                                       <button type="submit" className="btn btn-primary btn-mobile-full" style={{ padding: '0.7rem' }}>Push Matrix</button>
                                    </form>
                                    {selectedClient.customPriceModifiers?.length > 0 && (
                                        <div style={{ marginTop: '1rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
@@ -343,56 +343,56 @@ export default function AdminDashboard() {
                                     <input type="file" ref={fileInputRef} style={{ display: 'none' }} accept="image/*" onChange={handleImageUpload} />
                                </div>
 
-                               <div style={{ display: 'flex', gap: '1rem' }}>
-                                   <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                               <div className="form-row">
+                                   <div className="form-group">
                                        <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Product Name</label>
-                                       <input className="input-glass" value={productForm.name} onChange={e => setProductForm({...productForm, name: e.target.value})} required />
+                                       <input className="input-glass" value={productForm.name} onChange={e => setProductForm({...productForm, name: e.target.value})} required style={{ width: '100%' }} />
                                    </div>
-                                   <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                   <div className="form-group">
                                        <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>SKU Identifier</label>
-                                       <input className="input-glass" value={productForm.sku} onChange={e => setProductForm({...productForm, sku: e.target.value})} required />
+                                       <input className="input-glass" value={productForm.sku} onChange={e => setProductForm({...productForm, sku: e.target.value})} required style={{ width: '100%' }} />
                                    </div>
                                </div>
 
-                               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                               <div className="form-group">
                                    <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Detailed Description</label>
-                                   <textarea className="input-glass" style={{ minHeight: '80px', resize: 'vertical' }} value={productForm.details} onChange={e => setProductForm({...productForm, details: e.target.value})} />
+                                   <textarea className="input-glass" style={{ minHeight: '80px', resize: 'vertical', width: '100%' }} value={productForm.details} onChange={e => setProductForm({...productForm, details: e.target.value})} />
                                </div>
                                
-                               <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-end' }}>
-                                   <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                               <div className="form-row align-end">
+                                   <div className="form-group">
+                                       <div className="form-row-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                            <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Category DB Logic</label>
                                            <button type="button" onClick={handleCreateCategory} style={{ background: 'none', border: 'none', color: 'var(--accent-blue)', fontSize: '0.7rem', cursor: 'pointer', padding: 0 }}>Create New</button>
                                        </div>
-                                       <select className="input-glass" value={productForm.category} onChange={e => setProductForm({...productForm, category: e.target.value})} required>
+                                       <select className="input-glass" value={productForm.category} onChange={e => setProductForm({...productForm, category: e.target.value})} required style={{ width: '100%' }}>
                                            <option value="">Select Category</option>
                                            {categories.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
                                        </select>
                                    </div>
                                </div>
 
-                               <div style={{ display: 'flex', gap: '1rem' }}>
-                                   <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                               <div className="form-row">
+                                   <div className="form-group">
                                        <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Base Price</label>
-                                       <input type="number" className="input-glass" value={productForm.basePrice} onChange={e => setProductForm({...productForm, basePrice: parseFloat(e.target.value)})} step="0.01" required />
+                                       <input type="number" className="input-glass" value={productForm.basePrice} onChange={e => setProductForm({...productForm, basePrice: parseFloat(e.target.value)})} step="0.01" required style={{ width: '100%' }} />
                                    </div>
-                                   <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                   <div className="form-group">
                                        <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Stock Qty</label>
-                                       <input type="number" className="input-glass" value={productForm.stockQuantity} onChange={e => setProductForm({...productForm, stockQuantity: parseInt(e.target.value,10)})} required />
+                                       <input type="number" className="input-glass" value={productForm.stockQuantity} onChange={e => setProductForm({...productForm, stockQuantity: parseInt(e.target.value,10)})} required style={{ width: '100%' }} />
                                    </div>
-                                   <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                   <div className="form-group">
                                        <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Order MOQ</label>
-                                       <input type="number" className="input-glass" value={productForm.moq} onChange={e => setProductForm({...productForm, moq: parseInt(e.target.value,10)})} min="1" required />
+                                       <input type="number" className="input-glass" value={productForm.moq} onChange={e => setProductForm({...productForm, moq: parseInt(e.target.value,10)})} min="1" required style={{ width: '100%' }} />
                                    </div>
                                </div>
 
-                                <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
-                                     <button type="submit" className="btn btn-primary" style={{ flex: 2, justifyContent: 'center' }}>Save Product Logic</button>
+                                <div className="form-row form-actions" style={{ marginTop: '1rem' }}>
+                                     <button type="submit" className="btn btn-primary flex-2" style={{ justifyContent: 'center' }}>Save Product Logic</button>
                                      {editingProduct && (
                                           <>
-                                            <button type="button" className="btn btn-glass" style={{ flex: 1, color: 'var(--accent-red)', justifyContent: 'center' }} onClick={deleteProduct}>Delete</button>
-                                            <button type="button" className="btn btn-glass" style={{ flex: 1, justifyContent: 'center' }} onClick={() => { setEditingProduct(null); setProductForm({ name: '', sku: '', basePrice: 0, stockQuantity: 0, moq: 1, details: '', imageUrl: '', category: '' }) }}>Cancel</button>
+                                            <button type="button" className="btn btn-glass flex-1 outline-red" style={{ color: 'var(--accent-red)', justifyContent: 'center' }} onClick={deleteProduct}>Delete</button>
+                                            <button type="button" className="btn btn-glass flex-1" style={{ justifyContent: 'center' }} onClick={() => { setEditingProduct(null); setProductForm({ name: '', sku: '', basePrice: 0, stockQuantity: 0, moq: 1, details: '', imageUrl: '', category: '' }) }}>Cancel</button>
                                           </>
                                      )}
                                 </div>
