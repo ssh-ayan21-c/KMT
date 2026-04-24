@@ -114,6 +114,26 @@ router.post('/register', async (req, res) => {
     }
 });
 
+router.post('/reset-password', async (req, res) => {
+    try {
+        const { email, phoneNumber, newPassword } = req.body;
+        
+        // Find user by both email and phone number to ensure security during demo phase
+        const user = await User.findOne({ email, phoneNumber });
+        if (!user) {
+            return res.status(404).json({ error: 'No account found matching this email and phone number' });
+        }
+
+        const passwordHash = await bcrypt.hash(newPassword, 10);
+        user.passwordHash = passwordHash;
+        await user.save();
+
+        res.json({ success: true, message: 'Password has been reset successfully. Please log in.' });
+    } catch (err) {
+        res.status(500).json({ error: 'Password reset completely failed' });
+    }
+});
+
 router.get('/me', async (req, res) => {
     try {
         const token = req.headers.authorization?.split(' ')[1];

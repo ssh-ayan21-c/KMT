@@ -10,16 +10,22 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [error, setError] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
 
+  // Forgot password mode
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
+  
   // Post-Google login phone number logic
   const [showPhoneModal, setShowPhoneModal] = useState(false);
   const [googleIdToken, setGoogleIdToken] = useState(null);
   
-  const { login, register, googleLogin } = useAuthStore();
+  const hasGoogleClientId = !!import.meta.env.VITE_GOOGLE_CLIENT_ID;
+  const { login, register, googleLogin, resetPassword } = useAuthStore();
 
   const handleAuth = async (e) => {
     e.preventDefault();
     setError('');
+    setSuccessMsg('');
     let res;
     
     if (isLogin) {
@@ -29,6 +35,20 @@ export default function Login() {
     }
     
     if (!res.success) setError(res.error);
+  };
+
+  const handleResetPassword = async (e) => {
+      e.preventDefault();
+      setError('');
+      setSuccessMsg('');
+      const res = await resetPassword(email, phoneNumber, password); // Using password var as newPassword
+      if (res.success) {
+          setSuccessMsg(res.message);
+          setIsForgotPassword(false);
+          setIsLogin(true);
+      } else {
+          setError(res.error);
+      }
   };
 
   const onGoogleSuccess = async (response) => {
@@ -84,61 +104,98 @@ export default function Login() {
         </div>
         
         {error && <div style={{ background: 'rgba(239, 68, 68, 0.1)', color: 'var(--accent-red)', padding: '0.75rem', borderRadius: '8px', marginBottom: '1.5rem', textAlign:'center', fontSize: '0.9rem', border: '1px solid rgba(239, 68, 68, 0.2)' }}>{error}</div>}
+        {successMsg && <div style={{ background: 'rgba(34, 197, 94, 0.1)', color: '#4ade80', padding: '0.75rem', borderRadius: '8px', marginBottom: '1.5rem', textAlign:'center', fontSize: '0.9rem', border: '1px solid rgba(34, 197, 94, 0.2)' }}>{successMsg}</div>}
         
-        <form onSubmit={handleAuth} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-          {!isLogin && (
-              <>
+        {isForgotPassword ? (
+            <form onSubmit={handleResetPassword} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                <p style={{ margin: '0 0 1rem 0', fontSize: '0.85rem', color: 'var(--text-secondary)', textAlign: 'center' }}>Enter your account details to reset your password.</p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 500 }}>Full Name / Business Entity</label>
-                    <input type="text" className="input-glass" value={name} onChange={e => setName(e.target.value)} required={!isLogin} placeholder="Enter your business name" />
+                    <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 500 }}>Email Address</label>
+                    <input type="email" className="input-glass" value={email} onChange={e => setEmail(e.target.value)} required placeholder="name@company.com" />
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 500 }}>Active Phone Number</label>
-                    <input type="tel" className="input-glass" value={phoneNumber} onChange={e => setPhoneNumber(e.target.value)} required={!isLogin} placeholder="+91 XXXXX XXXXX" />
+                    <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 500 }}>Registered Phone Number</label>
+                    <input type="tel" className="input-glass" value={phoneNumber} onChange={e => setPhoneNumber(e.target.value)} required placeholder="+91 XXXXX XXXXX" />
                 </div>
-              </>
-          )}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 500 }}>New Security Password</label>
+                    <input type="password" className="input-glass" value={password} onChange={e => setPassword(e.target.value)} required placeholder="••••••••" />
+                </div>
+                <button type="submit" className="btn btn-primary" style={{ justifyContent: 'center', marginTop: '1rem', padding: '1rem', borderRadius: '12px', fontSize: '1rem' }}>
+                    Reset Password
+                </button>
+            </form>
+        ) : (
+            <form onSubmit={handleAuth} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+              {!isLogin && (
+                  <>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                        <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 500 }}>Full Name / Business Entity</label>
+                        <input type="text" className="input-glass" value={name} onChange={e => setName(e.target.value)} required={!isLogin} placeholder="Enter your business name" />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                        <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 500 }}>Active Phone Number</label>
+                        <input type="tel" className="input-glass" value={phoneNumber} onChange={e => setPhoneNumber(e.target.value)} required={!isLogin} placeholder="+91 XXXXX XXXXX" />
+                    </div>
+                  </>
+              )}
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 500 }}>Business Email Address</label>
-            <input type="email" className="input-glass" value={email} onChange={e => setEmail(e.target.value)} required placeholder="name@company.com" />
-          </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 500 }}>Business Email Address</label>
+                <input type="email" className="input-glass" value={email} onChange={e => setEmail(e.target.value)} required placeholder="name@company.com" />
+              </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 500 }}>Security Password</label>
-            <input type="password" className="input-glass" value={password} onChange={e => setPassword(e.target.value)} required placeholder="••••••••" />
-          </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 500 }}>Security Password</label>
+                    {isLogin && (
+                        <span onClick={() => { setIsForgotPassword(true); setError(''); setSuccessMsg(''); }} style={{ fontSize: '0.75rem', color: 'var(--accent-primary)', cursor: 'pointer' }}>Forgot Password?</span>
+                    )}
+                </div>
+                <input type="password" className="input-glass" value={password} onChange={e => setPassword(e.target.value)} required placeholder="••••••••" />
+              </div>
 
-          <button type="submit" className="btn btn-primary" style={{ justifyContent: 'center', marginTop: '1rem', padding: '1rem', borderRadius: '12px', fontSize: '1rem' }}>
-            {isLogin ? <><LogIn size={20} /> Authorize Access</> : <><UserPlus size={20} /> Register Account</>}
-          </button>
-        </form>
+              <button type="submit" className="btn btn-primary" style={{ justifyContent: 'center', marginTop: '1rem', padding: '1rem', borderRadius: '12px', fontSize: '1rem' }}>
+                {isLogin ? <><LogIn size={20} /> Authorize Access</> : <><UserPlus size={20} /> Register Account</>}
+              </button>
+            </form>
+        )}
 
-        <div style={{ margin: '1.5rem 0', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <div style={{ flex: 1, height: '1px', background: 'var(--border-color)' }} />
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>OR</span>
-            <div style={{ flex: 1, height: '1px', background: 'var(--border-color)' }} />
-        </div>
+        {!isForgotPassword && hasGoogleClientId && (
+            <>
+                <div style={{ margin: '1.5rem 0', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    <div style={{ flex: 1, height: '1px', background: 'var(--border-color)' }} />
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>OR</span>
+                    <div style={{ flex: 1, height: '1px', background: 'var(--border-color)' }} />
+                </div>
 
-        <div style={{ display: 'flex', justifyContent: 'center' }}>
-            <GoogleLogin 
-                onSuccess={onGoogleSuccess}
-                onError={() => setError('Google Login Failed')}
-                theme="filled_black"
-                shape="pill"
-                text="continue_with"
-                width={300}
-            />
-        </div>
+                <div style={{ display: 'flex', justifyContent: 'center' }}>
+                    <GoogleLogin 
+                        onSuccess={onGoogleSuccess}
+                        onError={() => setError('Google Login Failed')}
+                        theme="filled_black"
+                        shape="pill"
+                        text="continue_with"
+                        width={300}
+                    />
+                </div>
+            </>
+        )}
+
+        {!isForgotPassword && !hasGoogleClientId && (
+             <div style={{ marginTop: '1.5rem', textAlign: 'center', fontSize: '0.8rem', color: 'var(--text-secondary)', borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
+                 Secure internal credentials required.
+             </div>
+        )}
 
         <div style={{ marginTop: '2rem', textAlign: 'center' }}>
            <button 
-              onClick={() => { setIsLogin(!isLogin); setError(''); }} 
+              onClick={() => { setIsLogin(!isLogin); setIsForgotPassword(false); setError(''); setSuccessMsg(''); }} 
               style={{ background: 'none', border: 'none', color: 'var(--accent-secondary)', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 500, transition: 'var(--transition)' }}
               onMouseEnter={e => e.currentTarget.style.color = 'var(--accent-primary)'}
               onMouseLeave={e => e.currentTarget.style.color = 'var(--accent-secondary)'}
             >
-              {isLogin ? "Prospective Buyer? Apply for an Account" : "Registered Partner? Sign In Here"}
+              {isForgotPassword ? "Back to Login Portal" : (isLogin ? "Prospective Buyer? Apply for an Account" : "Registered Partner? Sign In Here")}
            </button>
         </div>
       </div>

@@ -59,6 +59,15 @@ const useAuthStore = create((set, get) => ({
             return { success: false, error: err.response?.data?.error || 'Registration failed' };
         }
     },
+
+    resetPassword: async (email, phoneNumber, newPassword) => {
+        try {
+            const res = await api.post('/auth/reset-password', { email, phoneNumber, newPassword });
+            return { success: true, message: res.data.message };
+        } catch (err) {
+            return { success: false, error: err.response?.data?.error || 'Password reset failed' };
+        }
+    },
     
     logout: () => {
         localStorage.removeItem('token');
