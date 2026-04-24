@@ -3,7 +3,7 @@ import axios from 'axios';
 
 // Create a configured axios instance
 const api = axios.create({
-    baseURL: 'http://localhost:5000/api',
+    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
     timeout: 10000 // 10 second timeout
 });
 
@@ -26,16 +26,20 @@ const useAuthStore = create((set, get) => ({
         }
     },
 
-    googleLogin: async (googleToken) => {
+    googleLogin: async (googleToken, phoneNumber = null) => {
         try {
-            const res = await api.post('/auth/google-login', { googleToken });
-            const { token, user } = res.data;
+            const res = await api.post('/auth/google-login', { googleToken, phoneNumber });
+            const { token, user, needsPhone } = res.data;
             
-            localStorage.setItem('token', token);
-            api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-            set({ user, token });
+            // Only finalize session if we don't need a phone number
+            if (!needsPhone) {
+                localStorage.setItem('token', token);
+                api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+            }
             
-            return { success: true, user };
+            set({ user, token: needsPhone ? null : token });
+            
+            return { success: true, user, needsPhone };
         } catch (err) {
             return { success: false, error: err.response?.data?.error || 'Google Login failed' };
         }

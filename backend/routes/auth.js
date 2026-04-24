@@ -44,7 +44,7 @@ router.post('/login', async (req, res) => {
 
 router.post('/google-login', async (req, res) => {
     try {
-        const { googleToken } = req.body;
+        const { googleToken, phoneNumber } = req.body;
         if (!googleToken) return res.status(400).json({ error: 'Missing token' });
 
         const ticket = await client.verifyIdToken({
@@ -52,7 +52,7 @@ router.post('/google-login', async (req, res) => {
             audience: process.env.GOOGLE_CLIENT_ID,
         });
         const payload = ticket.getPayload();
-        const { sub: googleId, email, name, picture } = payload;
+        const { sub: googleId, email, name } = payload;
 
         let user = await User.findOne({ email }).populate('approvedCategories');
 
@@ -60,8 +60,12 @@ router.post('/google-login', async (req, res) => {
             // Link account if not already linked
             if (!user.googleId) {
                 user.googleId = googleId;
-                await user.save();
             }
+            // Update phone if provided and currently pending
+            if (phoneNumber && (user.phoneNumber === 'PENDING' || !user.phoneNumber)) {
+                user.phoneNumber = phoneNumber;
+            }
+            await user.save();
         } else {
             // Create new user
             user = await User.create({
@@ -70,17 +74,19 @@ router.post('/google-login', async (req, res) => {
                 googleId,
                 role: 'buyer',
                 isApproved: false,
-                phoneNumber: 'PENDING' // Placeholder until user provides it
+                phoneNumber: phoneNumber || 'PENDING'
             });
         }
 
+        // If after all that, phone is still pending, we alert the frontend 
+        // but we can still issue a token for the "Phone Modal" phase
         const token = jwt.sign(
             { userId: user._id, role: user.role },
             process.env.JWT_SECRET || 'fallback_secret',
             { expiresIn: '1d' }
         );
 
-        res.json({ token, user });
+        res.json({ token, user, needsPhone: user.phoneNumber === 'PENDING' });
     } catch (err) {
         console.error('Google Auth Error:', err);
         res.status(401).json({ error: 'Google authentication failed' });

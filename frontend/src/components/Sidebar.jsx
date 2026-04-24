@@ -1,7 +1,7 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import useAuthStore, { api } from '../store/authStore';
-import { LayoutDashboard, Package, ShieldCheck, LogOut, XCircle, PackageSearch, MessageSquare } from 'lucide-react';
+import { LayoutDashboard, Package, ShieldCheck, LogOut, XCircle, PackageSearch, MessageSquare, Info } from 'lucide-react';
 
 export default function Sidebar({ isOpen, onClose }) {
     const { user, logout } = useAuthStore();
@@ -21,6 +21,14 @@ export default function Sidebar({ isOpen, onClose }) {
             
             <nav style={{ flex: 1, padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', overflowY: 'auto' }}>
                 <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--accent-primary)', marginBottom: '0.5rem', letterSpacing: '0.05em', fontWeight: 'bold' }}>Navigation</div>
+                
+                <NavLink to="/about" onClick={onClose} style={{ textDecoration: 'none', color: 'var(--text-primary)' }}>
+                    {({ isActive }) => (
+                        <div style={{ padding: '0.75rem 1rem', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '0.75rem', background: isActive ? 'rgba(255, 90, 9, 0.15)' : 'transparent', color: isActive ? 'var(--accent-primary)' : 'inherit' }}>
+                            <Info size={18} /> About KMT
+                        </div>
+                    )}
+                </NavLink>
                 
                 {user?.role === 'admin' && (
                     <NavLink to="/admin" onClick={onClose} style={{ textDecoration: 'none', color: 'var(--text-primary)' }}>

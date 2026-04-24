@@ -5,6 +5,7 @@ import Login from './pages/Login';
 import Lobby from './pages/Lobby';
 import Catalog from './pages/Catalog';
 import AdminDashboard from './pages/AdminDashboard';
+import About from './pages/About';
 import Layout from './components/Layout';
 
 const ProtectedRoute = ({ children, requireAdmin = false }) => {
@@ -86,6 +87,8 @@ function App() {
           <Route path="discover" element={<Lobby />} />
           
           <Route path="catalog/:categoryId?" element={<Catalog />} />
+          
+          <Route path="about" element={<About />} />
           
           <Route path="admin" element={
               <ProtectedRoute requireAdmin={true}>

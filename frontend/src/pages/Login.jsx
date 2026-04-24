@@ -13,7 +13,7 @@ export default function Login() {
 
   // Post-Google login phone number logic
   const [showPhoneModal, setShowPhoneModal] = useState(false);
-  const [pendingUser, setPendingUser] = useState(null);
+  const [googleIdToken, setGoogleIdToken] = useState(null);
   
   const { login, register, googleLogin } = useAuthStore();
 
@@ -32,10 +32,10 @@ export default function Login() {
   };
 
   const onGoogleSuccess = async (response) => {
+      setGoogleIdToken(response.credential);
       const res = await googleLogin(response.credential);
       if (res.success) {
-          if (res.user.phoneNumber === 'PENDING') {
-              setPendingUser(res.user);
+          if (res.needsPhone) {
               setShowPhoneModal(true);
           }
       } else {
@@ -45,11 +45,13 @@ export default function Login() {
 
   const submitPhoneNumber = async () => {
        if (!phoneNumber) return;
-       try {
-           const { api } = await import('../store/authStore');
-           await api.put('/auth/profile', { phoneNumber });
-           window.location.reload(); 
-       } catch(err) { setError('Failed to save phone number'); }
+       setError('');
+       const res = await googleLogin(googleIdToken, phoneNumber);
+       if (res.success && !res.needsPhone) {
+           setShowPhoneModal(false);
+       } else {
+           setError('Failed to finalize account. Please try again.');
+       }
   };
 
   return (

@@ -30,7 +30,7 @@ async function startServer() {
 
     try {
         await mongoose.connect(mongoUri);
-        console.log(`Connected to MongoDB at ${mongoUri}`);
+        console.log(`Connected to MongoDB Atlas`);
         
         // Auto-seed for demo if memory server is used
         if (!process.env.MONGODB_URI) {
