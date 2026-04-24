@@ -237,7 +237,26 @@ export default function AdminDashboard() {
                               <h3 style={{ margin: '0 0 1.5rem 0' }}>Manage {selectedClient.name}</h3>
 
                               <div style={{ marginBottom: '2rem' }}>
-                                   <h4 style={{ fontSize: '0.9rem', color: 'var(--accent-blue)', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem', marginBottom: '1rem' }}>Category Authorizations</h4>
+                                   <div style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem', marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <h4 style={{ fontSize: '0.9rem', color: 'var(--accent-blue)', margin: 0 }}>Category Authorizations</h4>
+                                    </div>
+                                    <div style={{ marginBottom: '1rem' }}>
+                                        <select 
+                                            className="input-glass" 
+                                            style={{ width: '100%', fontSize: '0.8rem', padding: '0.6rem' }}
+                                            onChange={(e) => {
+                                                if (e.target.value) {
+                                                    toggleClientCategory(selectedClient, e.target.value);
+                                                    e.target.value = "";
+                                                }
+                                            }}
+                                        >
+                                            <option value="">+ Manually Authorize Category (Proactive Grant)</option>
+                                            {categories.filter(c => !selectedClient.approvedCategories?.some(ac => ac._id === c._id)).map(c => (
+                                                <option key={c._id} value={c._id}>Grant Access: {c.name}</option>
+                                            ))}
+                                        </select>
+                                    </div>
                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                                        {selectedClient.requestedCategories?.filter(cat => !selectedClient.approvedCategories?.some(ac => ac._id === cat._id)).map(cat => (
                                             <div key={cat._id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255, 90, 0, 0.05)', padding: '0.75rem 1rem', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
@@ -255,7 +274,7 @@ export default function AdminDashboard() {
                                                  </button>
                                             </div>
                                         ))}
-                                       {(!selectedClient.requestedCategories?.length && !selectedClient.approvedCategories?.length) && <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>No category tracking recorded yet.</div>}
+                                       {(!selectedClient.requestedCategories?.length && !selectedClient.approvedCategories?.length) && <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', fontStyle: 'italic', textAlign: 'center', padding: '1rem' }}>Client hasn't initiated any requests. Use the dropdown above to approve their account and expressly assign a specific category.</div>}
                                    </div>
                               </div>
 
