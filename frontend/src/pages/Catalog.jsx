@@ -8,6 +8,7 @@ export default function Catalog() {
     const navigate = useNavigate();
     const [products, setProducts] = useState([]);
     const [cart, setCart] = useState({});
+    const [localQty, setLocalQty] = useState({});
     const [loading, setLoading] = useState(true);
 
     const [shippingAddress, setShippingAddress] = useState('');
@@ -75,6 +76,7 @@ export default function Catalog() {
              await api.post('/orders/request', { items, shippingAddress, billingAddress });
              alert('Order Request (RFQ) Submitted to Sales Rep!');
              setCart({});
+             setLocalQty({});
              setShippingAddress('');
              setBillingAddress('');
          } catch (err) {
@@ -86,24 +88,24 @@ export default function Catalog() {
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: '1.5rem' }}>
-            <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', paddingBottom: '1.5rem', borderBottom: '1px solid var(--border-color)' }}>
-                <div>
-                   <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', padding: 0, marginBottom: '1rem', fontSize: '0.9rem' }}>
-                       <ArrowLeft size={16} /> Go Back
+            <header className="dashboard-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', paddingBottom: '1.5rem', borderBottom: '1px solid var(--border-color)', gap: '1rem' }}>
+                <div style={{ flex: 1, textAlign: 'left', width: '100%' }}>
+                   <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', padding: 0, marginBottom: '0.75rem', fontSize: '0.9rem', justifyContent: 'flex-start' }}>
+                       <ArrowLeft size={16} /> <span className="desktop-only">Go Back</span>
                    </button>
-                   <h1 style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>Wholesale Catalog</h1>
-                   <p style={{ color: 'var(--text-secondary)', margin: 0 }}>Discover premium items mapped directly to your business profile.</p>
+                   <h1 style={{ fontSize: 'clamp(1.5rem, 5vw, 2.2rem)', marginBottom: '0.5rem', lineHeight: '1.2' }}>Wholesale Catalog</h1>
+                   <p style={{ color: 'var(--text-secondary)', margin: 0, fontSize: '0.85rem' }}>Discover premium items mapped directly to your profile.</p>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '1.5rem', minWidth: '350px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', width: '100%', maxWidth: '350px' }}>
                      {cartCount > 0 && (
                           <>
-                              <input type="text" className="input-glass" placeholder="Billing Address Required" value={billingAddress} onChange={e => setBillingAddress(e.target.value)} style={{ padding: '0.5rem' }} />
-                              <input type="text" className="input-glass" placeholder="Shipping Address Required" value={shippingAddress} onChange={e => setShippingAddress(e.target.value)} style={{ padding: '0.5rem' }} />
+                              <input type="text" className="input-glass" placeholder="Billing Address Required" value={billingAddress} onChange={e => setBillingAddress(e.target.value)} style={{ padding: '0.65rem', fontSize: '0.8rem' }} />
+                              <input type="text" className="input-glass" placeholder="Shipping Address Required" value={shippingAddress} onChange={e => setShippingAddress(e.target.value)} style={{ padding: '0.65rem', fontSize: '0.8rem' }} />
                           </>
                      )}
-                     <button className={`btn btn-${cartCount > 0 ? 'primary' : 'glass'}`} disabled={cartCount === 0} onClick={submitRFQ}>
+                     <button className={`btn btn-${cartCount > 0 ? 'primary' : 'glass'}`} disabled={cartCount === 0} onClick={submitRFQ} style={{ justifyContent: 'center', padding: '0.75rem' }}>
                          {cartCount > 0 ? <Send size={18} /> : <ShoppingCart size={18} />}
-                         Submit RFQ ({cartCount} Items)
+                         Submit RFQ ({cartCount})
                      </button>
                 </div>
             </header>
@@ -133,22 +135,39 @@ export default function Catalog() {
                                    {p.details && <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0, flex: 1 }}>{p.details}</p>}
                                    
                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid var(--border-color)' }}>
-                                        <div>
+                                        <div style={{ flex: 1 }}>
                                              <div style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-primary)' }}>₹{p.basePrice.toFixed(2)}</div>
                                              <div style={{ fontSize: '0.75rem', color: p.stockQuantity > 10 ? 'var(--accent-green)' : 'var(--accent-red)' }}>{p.stockQuantity} in stock</div>
                                         </div>
-                                        <div>
+                                        <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
                                             <input 
                                                 type="number" 
                                                 className="input-glass" 
-                                                style={{ width: '70px', padding: '0.5rem', textAlign: 'center' }}
+                                                style={{ width: '60px', padding: '0.5rem', textAlign: 'center', fontSize: '0.85rem' }}
                                                 min="0"
                                                 max={p.stockQuantity}
                                                 step={p.moq || 1}
-                                                value={cart[p._id] || ''}
-                                                onChange={(e) => handleQuantityChange(p, e.target.value)}
-                                                placeholder={`Qty (x${p.moq || 1})`}
+                                                value={localQty[p._id] !== undefined ? localQty[p._id] : (cart[p._id] || '')}
+                                                onChange={(e) => setLocalQty({...localQty, [p._id]: e.target.value})}
+                                                placeholder={`x${p.moq || 1}`}
                                             />
+                                            <button 
+                                                className="btn btn-primary" 
+                                                style={{ padding: '0.5rem 0.6rem', fontSize: '0.8rem', gap: 0 }}
+                                                onClick={(e) => {
+                                                    const val = localQty[p._id] !== undefined ? localQty[p._id] : cart[p._id];
+                                                    handleQuantityChange(p, val || 0);
+                                                    const btn = e.currentTarget;
+                                                    btn.innerHTML = '✓';
+                                                    btn.style.background = 'var(--accent-green)';
+                                                    setTimeout(() => {
+                                                        btn.innerHTML = 'Add';
+                                                        btn.style.background = '';
+                                                    }, 1000);
+                                                }}
+                                            >
+                                               Add
+                                            </button>
                                         </div>
                                    </div>
                                </div>

@@ -11,6 +11,7 @@ export default function Lobby() {
     const [loading, setLoading] = useState(true);
 
     if (user?.role === 'admin') return <Navigate to="/admin" replace />;
+    if (user?.isApproved && user?.approvedCategories?.length > 0) return <Navigate to="/catalog" replace />;
 
     useEffect(() => {
          const fetchCategories = async () => {
@@ -51,10 +52,10 @@ export default function Lobby() {
     };
 
     return (
-        <div className="app-container" style={{ justifyContent: 'center', alignItems: 'center', flexDirection: 'column', padding: '1rem', height: 'auto', minHeight: '100vh' }}>
-            <div style={{ position: 'absolute', top: 20, right: 20 }}>
-                 <button className="btn btn-glass" onClick={logout}>
-                     <LogOut size={16} /> Logout
+        <div className="app-container" style={{ justifyContent: 'center', alignItems: 'center', flexDirection: 'column', padding: '1rem', height: 'auto', minHeight: '100vh', position: 'relative' }}>
+            <div style={{ position: 'absolute', top: '1rem', right: '1rem', zIndex: 10 }}>
+                 <button className="btn btn-glass" onClick={logout} style={{ padding: '0.5rem 1rem' }}>
+                     <LogOut size={16} /> <span className="desktop-only" style={{ marginLeft: '0.25rem' }}>Logout</span>
                  </button>
             </div>
             

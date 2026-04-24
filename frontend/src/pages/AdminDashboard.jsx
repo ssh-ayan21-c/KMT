@@ -151,6 +151,8 @@ export default function AdminDashboard() {
          } catch(err) { alert('Failed to update order status'); }
     };
 
+    const pendingCount = clients.filter(c => !c.isApproved).length;
+
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
             <header className="dashboard-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderBottom: '1px solid var(--border-color)', paddingBottom: '1.5rem' }}>
@@ -160,7 +162,10 @@ export default function AdminDashboard() {
                 </div>
                 <div className="dashboard-tabs" style={{ display: 'flex', gap: '0.5rem' }}>
                      <button className={`btn ${activeTab === 'pipeline' ? 'btn-primary' : 'btn-glass'}`} onClick={() => setActiveTab('pipeline')}><Clock size={16}/> Pipeline</button>
-                     <button className={`btn ${activeTab === 'clients' ? 'btn-primary' : 'btn-glass'}`} onClick={() => setActiveTab('clients')}><Users size={16}/> Client Manager</button>
+                     <button className={`btn ${activeTab === 'clients' ? 'btn-primary' : 'btn-glass'}`} onClick={() => setActiveTab('clients')} style={{ position: 'relative' }}>
+                         <Users size={16}/> Client Manager
+                         {pendingCount > 0 && <span style={{ position: 'absolute', top: '-5px', right: '-5px', background: 'var(--accent-red)', color: 'white', fontSize: '0.65rem', padding: '0.1rem 0.4rem', borderRadius: '10px', fontWeight: 'bold' }}>{pendingCount}</span>}
+                     </button>
                      <button className={`btn ${activeTab === 'inventory' ? 'btn-primary' : 'btn-glass'}`} onClick={() => setActiveTab('inventory')}><PackageSearch size={16}/> Inventory</button>
                 </div>
             </header>
@@ -214,13 +219,13 @@ export default function AdminDashboard() {
                           <h3 style={{ margin: 0, padding: '1.5rem 1.5rem 0' }}>Client Database</h3>
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', background: 'var(--border-color)' }}>
                               {clients.map(c => (
-                                   <div key={c._id} onClick={() => setSelectedClient(c)} style={{ padding: '1.5rem', background: selectedClient?._id === c._id ? 'rgba(59, 130, 246, 0.1)' : 'var(--bg-primary)', cursor: 'pointer', display: 'flex', justifyContent: 'space-between' }}>
+                                   <div key={c._id} onClick={() => setSelectedClient(c)} style={{ padding: '0.75rem 1rem', background: selectedClient?._id === c._id ? 'rgba(59, 130, 246, 0.1)' : 'var(--bg-primary)', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                         <div>
-                                            <div style={{ fontWeight: 600 }}>{c.name}</div>
-                                            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>{c.company || c.email}</div>
+                                            <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{c.name}</div>
+                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>{c.company || c.email}</div>
                                         </div>
-                                            <span style={{ fontSize: '0.7rem', padding: '0.2rem 0.5rem', borderRadius: '4px', background: c.isApproved ? 'var(--accent-green)' : 'rgba(255,255,255,0.1)'}}>
-                                                {c.isApproved ? 'Active' : 'Pending Request'}
+                                            <span style={{ fontSize: '0.65rem', padding: '0.3rem 0.6rem', borderRadius: '12px', background: c.isApproved ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)', color: c.isApproved ? 'var(--accent-green)' : '#fca5a5', border: `1px solid ${c.isApproved ? 'rgba(16, 185, 129, 0.5)' : 'rgba(239, 68, 68, 0.5)'}` }}>
+                                                {c.isApproved ? 'Active' : 'Pending'}
                                             </span>
                                         </div>
                                    ))}
@@ -234,9 +239,9 @@ export default function AdminDashboard() {
                               <div style={{ marginBottom: '2rem' }}>
                                    <h4 style={{ fontSize: '0.9rem', color: 'var(--accent-blue)', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem', marginBottom: '1rem' }}>Category Authorizations</h4>
                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                                       {selectedClient.requestedCategories?.map(cat => (
+                                       {selectedClient.requestedCategories?.filter(cat => !selectedClient.approvedCategories?.some(ac => ac._id === cat._id)).map(cat => (
                                             <div key={cat._id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255, 90, 0, 0.05)', padding: '0.75rem 1rem', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
-                                                 <span>{cat.name} (Request)</span>
+                                                 <span>{cat.name} <span style={{ fontSize: '0.7rem', color: '#fca5a5' }}>(Requested)</span></span>
                                                  <button className="btn btn-primary" style={{ padding: '0.35rem 0.75rem', fontSize: '0.75rem' }} onClick={() => toggleClientCategory(selectedClient, cat._id)}>
                                                      Grant Access
                                                  </button>
@@ -303,14 +308,14 @@ export default function AdminDashboard() {
                                            <td style={{ padding: '0.5rem' }}>
                                                 {p.imageUrl ? <img src={p.imageUrl} alt="img" style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '4px' }} /> : <div style={{ width: '40px', height: '40px', background: 'var(--bg-primary)', borderRadius: '4px' }} />}
                                            </td>
-                                           <td>
-                                                <div style={{ fontWeight: 500 }}>{p.name}</div>
-                                                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden', display: '-webkit-box' }}>{p.details || 'No details'}</div>
+                                           <td style={{ minWidth: '150px' }}>
+                                                <div style={{ fontWeight: 500, fontSize: '0.9rem' }}>{p.name}</div>
+                                                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden', maxWidth: '180px' }}>{p.details || 'No details'}</div>
                                            </td>
-                                           <td style={{ fontSize: '0.85rem' }}>{p.category?.name || 'Unknown'}</td>
+                                           <td style={{ fontSize: '0.85rem' }}><span className="desktop-only">{p.category?.name || 'Unknown'}</span></td>
                                            <td style={{ textAlign: 'right' }}>
-                                               <div>₹{p.basePrice?.toFixed(2)}</div>
-                                               <div style={{ fontSize: '0.75rem', color: 'var(--accent-blue)' }}>MOQ: {p.moq || 1}</div>
+                                               <div style={{ fontWeight: 600 }}>₹{p.basePrice?.toFixed(2)}</div>
+                                               <div style={{ fontSize: '0.70rem', color: 'var(--accent-blue)' }}>MOQ: {p.moq || 1}</div>
                                            </td>
                                            <td style={{ textAlign: 'center' }}>
                                                <button className="btn btn-glass" style={{ padding: '0.4rem' }} onClick={() => openEdit(p)}>
